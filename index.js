@@ -12,7 +12,7 @@ const fs = require('fs');
  * @param {string} output output folder path
  * @returns {string} ics filename 
  */
-exports.convertToIcs = (schedule, taskName, description, output) => {
+exports.convertToIcs = (schedule, taskName, output) => {
 
     let results = [];
 
@@ -35,7 +35,7 @@ exports.convertToIcs = (schedule, taskName, description, output) => {
         /* Parse the remaining information to correct event format */
         let workdays = [];
         results.forEach(res => {
-            workdays.push(parseWorkDay(res.string, taskName, description)); 
+            workdays.push(parseWorkDay(res.string, taskName)); 
         });
         
         /* Generate the ics and return filename */
