@@ -32,6 +32,14 @@ exports.convertToIcs = (schedule, taskName, output) => {
         let regexTwo = new RegExp(/^[0-9][0-9][0-9][0-9]/)
         results = results.filter(x => !regex.test(x.string) && regexTwo.test(x.string));
     
+        if(results.length == 0){
+            return {
+                message: "File does not contain any scheduled IKEA workdays.",
+                filepath: "",
+                error: "File does not contain any scheduled IKEA workdays.",
+            }
+        }
+
         /* Parse the remaining information to correct event format */
         let workdays = [];
         results.forEach(res => {
@@ -109,8 +117,19 @@ generateIcs = (events, output) => {
     ics.createEvents(eventsArray, (error, value) => {
         if (error) 
             return console.log(error);
-
-        fs.writeFileSync(output+'/'+fileName+'.ics', value);
-        return fileName + '.ics';
+        try {
+            fs.writeFileSync(output+'/'+fileName+'.ics', value);
+            return {
+                message: "IKEA Schedule ics file created",
+                filepath: fileName + '.ics',
+                error: undefined
+            }
+        } catch (error) {
+            return {
+                message: error,
+                filepath: "",
+                error: error
+            }
+        }
     });
 }
