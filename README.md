@@ -1,6 +1,6 @@
 ### Features
 
-I got my schedule in a pdf and created this converter that creates an ics file instead. 
+I got my schedule in a pdf and created this converter that creates an ics file frmo a pdf. 
 
 # IKEA PDF schedule parser
 
