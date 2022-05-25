@@ -13,8 +13,5 @@ Example:
 
     
 The parameters are:
-*PDF path*
-*Calendar event title*
-*Calendar event description*
-*Output folder*
+*PDF path*, *Calendar event title*, *Calendar event description*, *Output folder*
 
