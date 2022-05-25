@@ -4,21 +4,19 @@
   "description": "¨",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "¨"
+    "url": "https://github.com/zeppsan/IKEA-PDF-schedule-parser"
   },
   "keywords": [
-    "¨¨¨"
+    "IKEA"
   ],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "dayjs": "^1.11.2",
     "ics": "^2.35.0",
-    "mocha": "^10.0.0",
     "pdf.js-extract": "^0.2.0"
   }
 }
