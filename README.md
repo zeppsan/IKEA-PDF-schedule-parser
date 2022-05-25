@@ -1,17 +1,16 @@
-### Features
+# IKEA Schedule converter
+I got my schedule in a pdf format which got me thinking, why not automate the process of putting it into the calendar? This is the IKEA schedule parser, it converts an IKEA schedule to .ics format. 
 
-I got my schedule in a pdf and created this converter that creates an ics file frmo a pdf. 
+## How to use
 
-# IKEA PDF schedule parser
+Import the ikeashedule package and use like this:
 
-This converter can be run with node.js.
+    const ikeaSchedule = require('ikeaschedule');
+	const outputFilePath = ikeaSchedule.convertToIcs('./schema.pdf', 'IKEA work',  './parsedSchedules/');
+The parameters passed to the function is: 
+1. The PDF schedule that you want to convert 
+2. The title you want on your calendar event. 
+3. The output folder. 
 
-Example: 
 
-    const ics = require('./index');
-	const outputFilePath = ics.convertToIcs('./schema.pdf', 'IKEA work', 'Västerås warehouse', './');
-
-    
-The parameters are:
-*PDF path*, *Calendar event title*, *Calendar event description*, *Output folder*
 
