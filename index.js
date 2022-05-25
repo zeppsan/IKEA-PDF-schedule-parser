@@ -12,7 +12,7 @@ const fs = require('fs');
  * @param {string} output output folder path
  * @returns {string} ics filename 
  */
-exports.convertToIcs = (schedule, taskName, description, output) => {
+exports.convertToIcs = (schedule, taskName, output) => {
 
     let results = [];
 
@@ -35,11 +35,11 @@ exports.convertToIcs = (schedule, taskName, description, output) => {
         /* Parse the remaining information to correct event format */
         let workdays = [];
         results.forEach(res => {
-            workdays.push(parseWorkDay(res.string)); 
+            workdays.push(parseWorkDay(res.string, taskName)); 
         });
         
         /* Generate the ics and return filename */
-        return generateIcs(workdays, taskName, description, output);
+        return generateIcs(workdays, output);
     });
 }
 
@@ -60,23 +60,36 @@ addToResult = (results, object, pageNum) => {
 }
 
 /* Creates a workday object. */
-parseWorkDay = (string) => { 
+parseWorkDay = (string, taskName) => { 
 
-    let day = string.substring(0, 10) + " ";
-    let workours = string.replace(/^[0-9][0-9][0-9][0-9].+[a-öA-Ö]+/g, '').split(' ');
+    let day, workHours, eventDescription, workours;
+
+    /* Fetches the date in the beginnig of the string */
+    day = string.substring(0, 10) + " ";
+
+    /* Fetches the timestamps at the end of the string */
+    workHours = string.match(/([0-9][0-9]?:[0-9][0-9]?)/g)
+    
+    /* removes the date from the string */
+    eventDescription = string.replace(/^([0-9]+-[0-9]+-[0-9]+) ([a-ö]+)/g, ' ')
+
+    /* Remoes the timestamps from the string so that we are left with only description*/
+    eventDescription = eventDescription.replace(/([0-9][0-9]?:[0-9][0-9]?)/g, ' ');
 
     let workday = {
         day: day,
-        startTime: dayjs(new Date(day + workours[1])).format("YYYY-M-D-H-m"),
-        endTime: dayjs(new Date(day + workours[2])).format("YYYY-M-D-H-m"),
-        totalTime: workours[3]
+        title: taskName,
+        description: eventDescription,
+        startTime: dayjs(new Date(day + workHours[0])).format("YYYY-M-D-H-m"),
+        endTime: dayjs(new Date(day + workHours[1])).format("YYYY-M-D-H-m"),
+        totalTime: workHours[2]
     }
 
     return workday;
 }
 
 /* Generates the Ics file and returns the filename */
-generateIcs = (events, taskName, description, output) => {
+generateIcs = (events, output) => {
     let eventsArray = [];
     const fileName = Math.floor(Math.random() * 10000);
 
@@ -85,8 +98,8 @@ generateIcs = (events, taskName, description, output) => {
         const newEvent = {
             start: event.startTime.split('-').map(x => parseInt(x)),
             end: event.endTime.split('-').map(x => parseInt(x)),
-            title: taskName,
-            description: description,
+            title: event.title,
+            description: event.description,
             status: "CONFIRMED"
         }
         eventsArray.push(newEvent);
