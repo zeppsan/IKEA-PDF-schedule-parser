@@ -12,42 +12,45 @@ const fs = require('fs');
  * @param {string} output output folder path
  * @returns {string} ics filename 
  */
-exports.convertToIcs = (schedule, taskName, output) => {
+exports.convertToIcs = async (schedule, taskName, output) => {
 
-    let results = [];
+    return new Promise((resolve, reject) => {
+        let results = [];
 
-    pdfExtract.extract(schedule, {}, (err, data) => {
-        if (err) 
-            return console.log(err);
+        pdfExtract.extract(schedule, {})
+        .then((data) => {
+
+            /* Scans all the pages for strings. Parses then into result array */
+            data.pages.forEach(page => {
+                page.content.forEach(content => {
+                    addToResult(results, content, page.pageInfo.num);
+                })
+            });
         
-        /* Scans all the pages for strings. Parses then into result array */
-        data.pages.forEach(page => {
-            page.content.forEach(content => {
-                addToResult(results, content, page.pageInfo.num);
-            })
-        });
-    
-        /* Remove information that is not relevant */
-        let regex = new RegExp(/[a-ö]$/)
-        let regexTwo = new RegExp(/^[0-9][0-9][0-9][0-9]/)
-        results = results.filter(x => !regex.test(x.string) && regexTwo.test(x.string));
-    
-        if(results.length == 0){
-            return {
-                message: "File does not contain any scheduled IKEA workdays.",
-                filepath: "",
-                error: "File does not contain any scheduled IKEA workdays.",
+            /* Remove information that is not relevant */
+            let regex = new RegExp(/[a-ö]$/)
+            let regexTwo = new RegExp(/^[0-9][0-9][0-9][0-9]/)
+            results = results.filter(x => !regex.test(x.string) && regexTwo.test(x.string));
+        
+            if(results.length == 0){
+                return {
+                    message: "File does not contain any scheduled IKEA workdays.",
+                    filepath: "",
+                    error: "File does not contain any scheduled IKEA workdays.",
+                }
             }
-        }
 
-        /* Parse the remaining information to correct event format */
-        let workdays = [];
-        results.forEach(res => {
-            workdays.push(parseWorkDay(res.string, taskName)); 
-        });
-        
-        /* Generate the ics and return filename */
-        return generateIcs(workdays, output);
+            /* Parse the remaining information to correct event format */
+            let workdays = [];
+            results.forEach(res => {
+                workdays.push(parseWorkDay(res.string, taskName)); 
+            });
+            /* Generate the ics and return filename */
+            resolve(generateIcs(workdays, output));
+        })
+        .catch(err => {
+            reject("Invalid schedule file")
+        })
     });
 }
 
@@ -118,7 +121,7 @@ generateIcs = (events, output) => {
 }
 
 function createIceEvents(eventsArray, output, fileName) {
-    ics.createEvents(eventsArray, (error, value) => {
+    return ics.createEvents(eventsArray, (error, value) => {
         if (error)
             return console.log(error);
         try {
