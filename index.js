@@ -114,22 +114,26 @@ generateIcs = (events, output) => {
     })
 
     /* Creates the ICS */
+    return createIceEvents(eventsArray, output, fileName);
+}
+
+function createIceEvents(eventsArray, output, fileName) {
     ics.createEvents(eventsArray, (error, value) => {
-        if (error) 
+        if (error)
             return console.log(error);
         try {
-            fs.writeFileSync(output+'/'+fileName+'.ics', value);
+            fs.writeFileSync(output + '/' + fileName + '.ics', value);
             return {
                 message: "IKEA Schedule ics file created",
                 filepath: fileName + '.ics',
                 error: undefined
-            }
+            };
         } catch (error) {
             return {
                 message: error,
                 filepath: "",
                 error: error
-            }
+            };
         }
     });
 }
