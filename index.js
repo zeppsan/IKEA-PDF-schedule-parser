@@ -114,7 +114,7 @@ generateIcs = (events, output) => {
     })
 
     /* Creates the ICS */
-    createIceEvents(eventsArray, output, fileName);
+    return createIceEvents(eventsArray, output, fileName);
 }
 
 function createIceEvents(eventsArray, output, fileName) {
