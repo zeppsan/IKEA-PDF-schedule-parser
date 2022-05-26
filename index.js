@@ -1,142 +1,54 @@
 const PDFExtract = require('pdf.js-extract').PDFExtract;
 const pdfExtract = new PDFExtract();
 const ics = require('ics')
-const dayjs = require('dayjs');
-const fs = require('fs');
+const Schedule = require('./lib/schedule');
 
 /**
- * Converts an IKEA pdf schedule to ics format. 
- * @param {string} filepath path to the pdf 
+ * @param {Buffer} schedule Buffer object of file.
  * @param {string} taskName title that will be displayed in calendar
- * @param {description} description event description in calendar
- * @param {string} output output folder path
  * @returns {string} ics filename 
  */
-exports.convertToIcs = async (schedule, taskName, output) => {
+exports.convertToIcs = async (schedule, taskName) => new Promise((resolve, reject) => {
+    if(!Buffer.isBuffer(schedule))
+        throw "Buffer was not passed as first parameter"
+    if(taskName.length < 1)
+        throw "Missing task name as second parameter"
 
-    return new Promise((resolve, reject) => {
-        let results = [];
+    pdfExtract.extractBuffer(schedule, {})
+    .then((data) => {
+        const schedule = new Schedule(data, taskName);
+        resolve(generateIcs(schedule));
+    })
+    .catch(err => {
+        reject(err)
+    })
+});
 
-        pdfExtract.extract(schedule, {})
-        .then((data) => {
-
-            /* Scans all the pages for strings. Parses then into result array */
-            data.pages.forEach(page => {
-                page.content.forEach(content => {
-                    addToResult(results, content, page.pageInfo.num);
-                })
-            });
-        
-            /* Remove information that is not relevant */
-            let regex = new RegExp(/[a-ö]$/)
-            let regexTwo = new RegExp(/^[0-9][0-9][0-9][0-9]/)
-            results = results.filter(x => !regex.test(x.string) && regexTwo.test(x.string));
-        
-            if(results.length == 0){
-                return {
-                    message: "File does not contain any scheduled IKEA workdays.",
-                    filepath: "",
-                    error: "File does not contain any scheduled IKEA workdays.",
-                }
-            }
-
-            /* Parse the remaining information to correct event format */
-            let workdays = [];
-            results.forEach(res => {
-                workdays.push(parseWorkDay(res.string, taskName)); 
-            });
-            /* Generate the ics and return filename */
-            resolve(generateIcs(workdays, output));
-        })
-        .catch(err => {
-            reject("Invalid schedule file")
-        })
-    });
-}
-
-/* Adds string to results list if it does not exist */
-addToResult = (results, object, pageNum) => {
-
-    /* If the value does not exist. Add it */
-    let finder = results.find(x => Math.floor(x.y) == Math.floor(object.y) && x.page == pageNum);
-    if(finder == undefined){
-        results.push({
-            y: Math.floor(object.y),
-            page: pageNum,
-            string: object.str
-        });
-    } else {
-        finder.string += object.str
-    }
-}
-
-/* Creates a workday object. */
-parseWorkDay = (string, taskName) => { 
-
-    let day, workHours, eventDescription, workours;
-
-    /* Fetches the date in the beginnig of the string */
-    day = string.substring(0, 10) + " ";
-
-    /* Fetches the timestamps at the end of the string */
-    workHours = string.match(/([0-9][0-9]?:[0-9][0-9]?)/g)
-    
-    /* removes the date from the string */
-    eventDescription = string.replace(/^([0-9]+-[0-9]+-[0-9]+) ([a-ö]+)/g, ' ')
-
-    /* Remoes the timestamps from the string so that we are left with only description*/
-    eventDescription = eventDescription.replace(/([0-9][0-9]?:[0-9][0-9]?)/g, ' ');
-
-    let workday = {
-        day: day,
-        title: taskName,
-        description: eventDescription,
-        startTime: dayjs(new Date(day + workHours[0])).format("YYYY-M-D-H-m"),
-        endTime: dayjs(new Date(day + workHours[1])).format("YYYY-M-D-H-m"),
-        totalTime: workHours[2]
-    }
-
-    return workday;
-}
 
 /* Generates the Ics file and returns the filename */
-generateIcs = (events, output) => {
-    let eventsArray = [];
-    const fileName = Math.floor(Math.random() * 10000);
+generateIcs = (schedule) => {
+    if(schedule.events().length == 0)
+        throw "No events found in schedule"
 
-    /* Generates all the events based on the workdays passed in the events variable */
-    events.forEach(event => {
-        const newEvent = {
+    let eventsArray = schedule.events().map(event => {
+        return {
             start: event.startTime.split('-').map(x => parseInt(x)),
             end: event.endTime.split('-').map(x => parseInt(x)),
             title: event.title,
             description: event.description,
             status: "CONFIRMED"
         }
-        eventsArray.push(newEvent);
     })
 
     /* Creates the ICS */
-    return createIceEvents(eventsArray, output, fileName);
+    return createIceEvents(eventsArray);
 }
 
-function createIceEvents(eventsArray, output, fileName) {
+function createIceEvents(eventsArray) {
     return ics.createEvents(eventsArray, (error, value) => {
         if (error)
             return console.log(error);
-        try {
-            fs.writeFileSync(output + '/' + fileName + '.ics', value);
-            return {
-                message: "IKEA Schedule ics file created",
-                filepath: fileName + '.ics',
-                error: undefined
-            };
-        } catch (error) {
-            return {
-                message: error,
-                filepath: "",
-                error: error
-            };
-        }
+        
+        return value;
     });
 }
