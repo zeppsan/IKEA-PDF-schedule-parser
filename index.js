@@ -2,6 +2,7 @@ const PDFExtract = require('pdf.js-extract').PDFExtract;
 const pdfExtract = new PDFExtract();
 const ics = require('ics')
 const Schedule = require('./lib/schedule');
+const fs = require('fs');
 
 /**
  * @param {Buffer} schedule Buffer object of file.
@@ -49,6 +50,6 @@ function createIceEvents(eventsArray) {
         if (error)
             return console.log(error);
         
-        return value;
+        return Buffer.from(value)
     });
 }
